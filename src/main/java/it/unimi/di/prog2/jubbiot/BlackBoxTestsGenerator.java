@@ -61,7 +61,8 @@ public class BlackBoxTestsGenerator {
 
   public List<? extends DynamicNode> generateFromSubPackage(final String subPkgFqName) {
     final Path path =
-        testsDir.resolve(Paths.get(Objects.requireNonNull(subPkgFqName).replace(".", File.separator)));
+        testsDir.resolve(
+            Paths.get(Objects.requireNonNull(subPkgFqName).replace(".", File.separator)));
     if (!path.toFile().isDirectory())
       throw new IllegalArgumentException(
           "Tests directory " + path + " relative to package " + subPkgFqName + " not found");

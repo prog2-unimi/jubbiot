@@ -40,15 +40,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 
@@ -74,7 +73,8 @@ public class BlackBoxTest {
     private final byte[] input;
     private final List<String> expected;
 
-    private Case(int num) throws IOException {
+    private Case(final int num) throws IOException {
+      if (num < 0) throw new IllegalArgumentException("Test number " + num + " is negative");
       this.num = num;
       Path args = path.resolve(String.format(ARGS_FORMAT, num));
       Path input = path.resolve(String.format(INPUT_FORMAT, num));
@@ -82,19 +82,13 @@ public class BlackBoxTest {
       this.input = input.toFile().exists() ? Files.readAllBytes(input) : new byte[0];
       this.args =
           args.toFile().exists()
-              ? trim(Files.readAllLines(args)).toArray(new String[0])
+              ? trim(Files.readAllLines(args).stream()).toArray(new String[0])
               : new String[0];
-      this.expected = trim(Files.readAllLines(expected));
+      this.expected = trim(Files.readAllLines(expected).stream());
     }
 
-    private static List<String> trim(List<String> in) {
-      List<String> out = new ArrayList<>();
-      for (String s : in) {
-        String t = s.trim();
-        if (s.isEmpty()) continue;
-        out.add(t);
-      }
-      return Collections.unmodifiableList(out);
+    private static List<String> trim(Stream<String> in) {
+      return in.map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
     public void execute() {
@@ -117,7 +111,7 @@ public class BlackBoxTest {
       }
       System.setIn(stdin);
       System.setOut(stdout);
-      assertIterableEquals(expected, trim(Arrays.asList(baos.toString().split("\n"))));
+      assertIterableEquals(expected, trim(Arrays.stream(baos.toString().split("\n"))));
     }
   }
 
