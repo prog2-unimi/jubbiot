@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.ByteArrayInputStream;
@@ -48,24 +49,67 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.function.Executable;
 
+/**
+ * A class representing a black-box test.
+ *
+ * <p>A <em>black-box test</em> is a collection of <em>test cases</em> for a class endowed with a
+ * {@code main} method. Each test case is defined by a set of files containing <em>command line
+ * arguments</em>, the content for the <em>standard input</em>, and the expected content of the
+ * <em>standard output</em> stream (the only mandatory file is the one containing the expected
+ * result).
+ *
+ * <p>The files must be contained in a directory structure mimicking the package structure of the
+ * class under test. The file names are determined respectively by the following patterns: {@link
+ * #ARGS_FORMAT}, {@link #INPUT_FORMAT}, and {@link #EXPECTED_FORMAT}; if the environment variable
+ * {@code GENERATE_ACTUAL_FILES} the <em>standard output</em> produced by the class is saved in a
+ * file named following the {@link #ACTUAL_FORMAT} pattern.
+ *
+ * <p>Every test case works by invoking the {@code main} method with the given <em>command line
+ * arguments</em>, providing the content for the <em>standard input</em>, generating (and possibly
+ * saving) the <em>actual output</em> that is finally compared with the <em>expected output</em>.
+ * Every test is run for at most {@link #TIMEOUT} seconds.
+ */
 public class BlackBoxTest {
 
-  public static final boolean GENERATE_ACTUAL_FILES =
+  /** The maximum duration of a test case, in seconds. */
+  public static final Duration TIMEOUT = Duration.ofSeconds(10);
+
+  /**
+   * The format for the filename containing <em>command line arguments</em> for the <em>test
+   * case</em> run.
+   */
+  public static final String ARGS_FORMAT = "args-%d.txt";
+
+  /**
+   * The format for the filename where (if the environment varialble {@code GENERATE_ACTUAL_FILES}
+   * is set) the <em>actual</em> <em>standard output</em> of the <em>test case</em> run will be
+   * saved.
+   */
+  public static final String ACTUAL_FORMAT = "actual-%d.txt";
+
+  /**
+   * The format for the filename with the content of the <em>standard input</em> for the <em>test
+   * case</em> run.
+   */
+  public static final String INPUT_FORMAT = "input-%d.txt";
+
+  /**
+   * The format for the filename with the expected content of the <em>standard output</em> for the
+   * <em>test case</em> run.
+   */
+  public static final String EXPECTED_FORMAT = "expected-%d.txt";
+
+  private static final Pattern TASK_PATTERN = Pattern.compile("expected-(\\d+).txt");
+  private static final boolean GENERATE_ACTUAL_FILES =
       System.getenv("GENERATE_ACTUAL_FILES") != null;
 
-  public static final Duration TIMEOUT = Duration.ofSeconds(10);
-  public static final String ARGS_FORMAT = "args-%d.txt";
-  public static final String INPUT_FORMAT = "input-%d.txt";
-  public static final String EXPECTED_FORMAT = "expected-%d.txt";
-  public static final String ACTUAL_FORMAT = "actual-%d.txt";
-  public static final Pattern TASK_PATTERN = Pattern.compile("expected-(\\d+).txt");
-
   private final Method main;
-  public final Path path;
-  public final List<DynamicTest> cases;
+  private final Path path;
+  private final List<DynamicTest> cases;
 
   private class Case implements Executable {
     private final int num;
@@ -115,13 +159,23 @@ public class BlackBoxTest {
     }
   }
 
-  public BlackBoxTest(final Path testsDir, final Path fClsPath) {
-    if (!fClsPath.startsWith(testsDir))
+  /**
+   * Creates a black-box test for the class at the given path.
+   *
+   * <p>Collects all the <em>test cases</em> for the class at the given path. The class must have a
+   * {@code main} method that will be run to execute every <em>test case</em>.
+   *
+   * @param testsDir the directory containing the tests.
+   * @param clsPath the directory containing the <em>test cases</em> for the class, must be a
+   *     subdirectory of {@code testsDir}.
+   */
+  public BlackBoxTest(final Path testsDir, final Path clsPath) {
+    if (!Objects.requireNonNull(clsPath, "The test cases directory must not be null")
+        .startsWith(Objects.requireNonNull(testsDir, "The tests directory must not be null")))
       throw new IllegalArgumentException(
-          "Trying to produce test for " + fClsPath + " outside of " + testsDir);
-    Path rClsPath = testsDir.relativize(fClsPath);
-    this.path = Objects.requireNonNull(fClsPath);
-    String fqClsName = rClsPath.toString().replace(File.separator, ".");
+          "Trying to produce test for " + clsPath + " outside of " + testsDir);
+    this.path = clsPath;
+    final String fqClsName = testsDir.relativize(clsPath).toString().replace(File.separator, ".");
     Method main = null;
     try {
       main = Class.forName(fqClsName).getMethod("main", String[].class);
@@ -137,13 +191,13 @@ public class BlackBoxTest {
       return;
     }
     this.main = main;
-    Map<Integer, DynamicTest> casesMap = new TreeMap<>();
+    final Map<Integer, DynamicTest> casesMap = new TreeMap<>();
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(path, "expected-*.txt")) {
       for (Path path : stream) {
-        Matcher m = TASK_PATTERN.matcher(path.getFileName().toString());
+        final Matcher m = TASK_PATTERN.matcher(path.getFileName().toString());
         if (m.matches()) {
-          int num = Integer.parseInt(m.group(1));
-          String name = fqClsName + " - " + num;
+          final int num = Integer.parseInt(m.group(1));
+          final String name = fqClsName + " - " + num;
           try {
             final Case tc = new Case(num);
             casesMap.put(
@@ -174,5 +228,23 @@ public class BlackBoxTest {
               }));
     }
     this.cases = List.copyOf(casesMap.values());
+  }
+
+  /**
+   * Returns the list of <em>test cases</em>.
+   *
+   * @return the list of <em>test cases</em>.
+   */
+  public List<DynamicTest> cases() {
+    return cases;
+  }
+
+  /**
+   * Returns a {@link DynamicContainer} wrapping the <em>test cases</em> named after the class name.
+   *
+   * @return a {@link DynamicContainer} wrapping the <em>test cases</em>.
+   */
+  public DynamicContainer wrappedCases() {
+    return dynamicContainer(path.getFileName().toString(), cases);
   }
 }

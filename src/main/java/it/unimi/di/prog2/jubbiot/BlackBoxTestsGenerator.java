@@ -39,10 +39,18 @@ import java.util.TreeMap;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
 
+/** A class to generate {@link BlackBoxTest} instances from a directory tree. */
 public class BlackBoxTestsGenerator {
 
-  public final Path testsDir;
+  private static final String TASK_STRING = String.format(BlackBoxTest.EXPECTED_FORMAT, 1);
 
+  private final Path testsDir;
+
+  /**
+   * Creates the generator given a directory hierarchy.
+   *
+   * @param testsDir the root directory containing the hierarchy of <em>test cases</em> directories.
+   */
   public BlackBoxTestsGenerator(final String testsDir) {
     this.testsDir = Paths.get(Objects.requireNonNull(testsDir)).toAbsolutePath();
     if (!this.testsDir.toFile().isDirectory())
@@ -50,28 +58,43 @@ public class BlackBoxTestsGenerator {
   }
 
   private static List<DynamicContainer> wrap(List<BlackBoxTest> tc) {
-    return tc.stream()
-        .map(t -> dynamicContainer(t.path.getFileName().toString(), t.cases))
-        .toList();
+    return tc.stream().map(BlackBoxTest::wrappedCases).toList();
   }
 
+  /**
+   * Generates all the <em>test cases</em>.
+   *
+   * @return the list of <em>test cases</em>.
+   */
   public List<? extends DynamicNode> generate() {
-    return generateFromSubPackage("");
+    return generate("");
   }
 
-  public List<? extends DynamicNode> generateFromSubPackage(final String subPkgFqName) {
+  /**
+   * Generates the <em>test cases</em> given a package, or class, name.
+   *
+   * @param subPkgFqName the fully qualified name of the package or class.
+   * @return the list of <em>test cases</em> for the given package, or class.
+   */
+  public List<? extends DynamicNode> generate(final String subPkgFqName) {
     final Path path =
         testsDir.resolve(
-            Paths.get(Objects.requireNonNull(subPkgFqName).replace(".", File.separator)));
+            Paths.get(
+                Objects.requireNonNull(subPkgFqName, "The package or class name must not be null")
+                    .replace(".", File.separator)));
     if (!path.toFile().isDirectory())
       throw new IllegalArgumentException(
-          "Tests directory " + path + " relative to package " + subPkgFqName + " not found");
+          "Test cases directory "
+              + path
+              + " relative to package or class "
+              + subPkgFqName
+              + " not found");
     final Map<Path, List<BlackBoxTest>> p2t = new TreeMap<>();
     try {
       Files.find(
               path,
               Integer.MAX_VALUE,
-              (p, a) -> a.isDirectory() && p.resolve("expected-1.txt").toFile().exists())
+              (p, a) -> a.isDirectory() && p.resolve(TASK_STRING).toFile().exists())
           .forEach(
               p ->
                   p2t.computeIfAbsent(path.relativize(p.getParent()), k -> new LinkedList<>())
@@ -92,15 +115,16 @@ public class BlackBoxTestsGenerator {
                 fail("No test cases found");
               }));
     else if (p2t.size() == 1) {
-      List<BlackBoxTest> lt = p2t.entrySet().iterator().next().getValue();
-      if (lt.size() == 1) return lt.get(0).cases;
-      else return wrap(lt);
+      final List<BlackBoxTest> lt = p2t.entrySet().iterator().next().getValue();
+      return lt.size() == 1 ? lt.get(0).cases() : wrap(lt);
     } else {
       return p2t.entrySet().stream()
           .map(
               e ->
                   dynamicContainer(
-                      e.getKey().toString().isEmpty() ? "[pkg]" : e.getKey().toString(),
+                      e.getKey().toString().isEmpty()
+                          ? "[pkg]"
+                          : e.getKey().toString().replace(File.separator, "."),
                       wrap(e.getValue())))
           .toList();
     }
