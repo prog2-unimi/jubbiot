@@ -1,10 +1,9 @@
 package clients.first;
 
+import code.Adder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
-import code.Adder;
 
 public class AnotherClass {
   public static void main(String[] args) {

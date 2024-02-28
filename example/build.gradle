@@ -1,5 +1,6 @@
 plugins {
   id 'application'
+  id 'com.diffplug.spotless' version '6.22.0'
 }
 
 repositories {
@@ -26,10 +27,16 @@ java {
   }
 }
 
-application {
-  mainClass = 'jubbiotuse.App'
-}
-
 tasks.named('test') {
   useJUnitPlatform()
+}
+
+spotless {
+  enforceCheck false
+  java {
+    googleJavaFormat('1.17.0')
+    removeUnusedImports()
+    indentWithSpaces(2)
+    endWithNewline()
+  }
 }

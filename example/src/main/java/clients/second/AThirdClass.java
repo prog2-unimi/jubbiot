@@ -1,11 +1,10 @@
 package clients.second;
 
+import code.Adder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-
-import code.Adder;
 
 public class AThirdClass {
   public static void main(String[] args) {
@@ -19,5 +18,4 @@ public class AThirdClass {
     List<Integer> values = List.of(Adder.add(valuesFromArgs), Adder.add(valuesFromStdIn));
     System.out.println(Adder.add(values));
   }
-
 }

@@ -7,8 +7,9 @@ public class Adder {
 
   private Adder() {}
 
-  /** Adds integers.
-   * 
+  /**
+   * Adds integers.
+   *
    * @param values the values to add.
    * @return their sum.
    */

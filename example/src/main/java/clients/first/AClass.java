@@ -1,9 +1,8 @@
 package clients.first;
 
+import code.Adder;
 import java.util.Arrays;
 import java.util.List;
-
-import code.Adder;
 
 public class AClass {
   public static void main(String[] args) {
