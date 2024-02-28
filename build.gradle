@@ -4,6 +4,9 @@ plugins {
   id 'com.diffplug.spotless' version '6.22.0'
 }
 
+group = 'it.unimi.di.prog2'
+version = '0.1a5'
+
 repositories {
   mavenCentral()
 }
@@ -28,10 +31,6 @@ compileTestJava.options.encoding = 'UTF-8'
 publishing {
   publications {
     maven(MavenPublication) {
-      groupId = 'it.unimi.di.prog2'
-      artifactId = 'jubbiot'
-      version = '0.1a0'
-
       from components.java
     }
   }

@@ -1,0 +1,35 @@
+plugins {
+  id 'application'
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url = uri("https://maven.pkg.github.com/prog2-unimi/jubbiot")
+    credentials {
+      username = 'mapio'
+      password = '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'
+    }
+  }
+}
+
+dependencies {
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+  testImplementation 'it.unimi.di.prog2:jubbiot:+'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
+}
+
+application {
+  mainClass = 'jubbiotuse.App'
+}
+
+tasks.named('test') {
+  useJUnitPlatform()
+}
