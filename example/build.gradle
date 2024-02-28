@@ -9,8 +9,8 @@ repositories {
   maven {
     url = uri("https://maven.pkg.github.com/prog2-unimi/jubbiot")
     credentials {
-      username = 'mapio'
-      password = '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'
+      username = System.getenv("GITHUB_ACTOR")
+      password = System.getenv("GITHUB_TOKEN")
     }
   }
 }
