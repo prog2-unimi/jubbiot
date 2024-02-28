@@ -74,13 +74,6 @@ tests/clients
         └── input-2.txt
 ```
 
-describing an hierarchy of classes whose `main` method must:
-
-* `clients.first.AClass`
-* `clients.first.AClass`
-* `clients.first.AClass`
-* `clients.first.AClass`
-
 The **teacher** finally provides the `JubbiotTest` class (in the `src/test/java`
 directory); for the purpose of showing how automatic test discovery works, the
 class has three different JUnit `TestFactory` methods
