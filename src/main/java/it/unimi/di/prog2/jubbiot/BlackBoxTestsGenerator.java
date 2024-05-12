@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,7 +95,8 @@ public class BlackBoxTestsGenerator {
       Files.find(
               path,
               Integer.MAX_VALUE,
-              (p, a) -> a.isDirectory() && p.resolve(TASK_STRING).toFile().exists())
+              (p, a) -> a.isDirectory() && p.resolve(TASK_STRING).toFile().exists(),
+              FileVisitOption.FOLLOW_LINKS)
           .forEach(
               p ->
                   p2t.computeIfAbsent(path.relativize(p.getParent()), k -> new LinkedList<>())

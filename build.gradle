@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'it.unimi.di.prog2'
-version = '0.2a0'
+version = '0.3a0'
 
 repositories {
   mavenCentral()
