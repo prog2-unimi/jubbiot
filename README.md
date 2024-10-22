@@ -129,11 +129,16 @@ and the following one in the `TEST RESULTS` output tab:
 
 ![JUnit list results](img/list.png)
 
+### Generating actual outputs
+
 In case it is not easy for the **student** to grasp the reason of failed tests
 (not present in this example), he can define the `GENERATE_ACTUAL_FILES`
-*environment variable* to `true` and run the tests again. This will produce an
-`actual-N.txt` file (in the same subdirectory of `tests` where the other test
-case files are stored) containing the actual output produced by its
-implementation of the `main` method for the class under test. By comparing the
-`expected-N.txt` and `actual-N.txt` files, the **student** should easily
-understand the reason of the failure.
+*environment variable* to `true` and run the tests again. 
+
+This will produce an `actual-N.txt` file (in the same subdirectory of `tests`
+where the other test case files are stored) containing the actual output
+produced by the student implementation of the `main` method for the class under
+test. 
+
+By comparing the `expected-N.txt` and `actual-N.txt` files, the **student**
+should easily understand the reason of the failure.
