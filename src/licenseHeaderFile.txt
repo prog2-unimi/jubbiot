@@ -1,6 +1,6 @@
 /*
 
-Copyright 2024 Massimo Santini
+Copyright 2025 Massimo Santini
 
 This file is part of jubbiot.
 
