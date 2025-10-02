@@ -19,15 +19,6 @@ produce some prescribed output on the *standard output*. Such test are
 considered successful if the *actual* output is (in some sense) equal to the
 *expected* one.
 
-### Java 25 and the IO class
-
-Java 25 introduced the `IO` class in the `java.lang` package that provides
-static methods to read from standard input and write to standard output. The way
-such class works is incompatible with the way standard input and output are
-redirected by the `BlackBoxTestsGenerator` class.
-
-**If you want to use this library with Java 25, please avoid using the `IO` class.**
-
 ## Example
 
 An [example](example) project is provided to show the basic idea. 
