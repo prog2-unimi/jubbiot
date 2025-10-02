@@ -19,24 +19,17 @@ along with this file.  If not, see <https://www.gnu.org/licenses/>.
 
 */
 
-package clients.second;
+package clients.third;
 
 import code.Adder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
-public class AThirdClass {
+public class PlayingWithIO {
   public static void main(String[] args) {
-    List<Integer> valuesFromArgs = Arrays.stream(args).map(Integer::parseInt).toList();
-
-    List<Integer> valuesFromStdIn = new ArrayList<>();
-    try (Scanner in = new Scanner(System.in)) {
-      while (in.hasNextInt()) valuesFromStdIn.add(in.nextInt());
-    }
-
-    List<Integer> values = List.of(Adder.add(valuesFromArgs), Adder.add(valuesFromStdIn));
-    System.out.println(Adder.add(values));
+    List<Integer> values = new ArrayList<>();
+    String line;
+    while ((line = IO.readln()) != null) values.add(Integer.parseInt(line));
+    IO.println(Adder.add(values));
   }
 }
