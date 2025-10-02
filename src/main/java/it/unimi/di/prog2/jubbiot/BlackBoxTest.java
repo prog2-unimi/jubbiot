@@ -1,6 +1,6 @@
 /*
 
-Copyright 2024 Massimo Santini
+Copyright 2025 Massimo Santini
 
 This file is part of jubbiot.
 
@@ -85,9 +85,8 @@ public class BlackBoxTest {
   public static final String ARGS_FORMAT = "args-%d.txt";
 
   /**
-   * The format for the filename where (if the environment varialble {@code GENERATE_ACTUAL_FILES}
-   * is set) the <em>actual</em> <em>standard output</em> of the <em>test case</em> run will be
-   * saved.
+   * The format for the filename where (if the environment variable {@code GENERATE_ACTUAL_FILES} is
+   * set) the <em>actual</em> <em>standard output</em> of the <em>test case</em> run will be saved.
    */
   public static final String ACTUAL_FORMAT = "actual-%d.txt";
 
@@ -110,6 +109,26 @@ public class BlackBoxTest {
   private final Method main;
   private final Path path;
   private final List<DynamicTest> cases;
+  private final ReusableByteArrayInputStream inputStream;
+
+  private class ReusableByteArrayInputStream extends InputStream {
+
+    private InputStream bis;
+
+    public ReusableByteArrayInputStream() {
+      this.bis = InputStream.nullInputStream();
+    }
+
+    public void resetTo(byte[] buf) {
+      Objects.requireNonNull(buf);
+      this.bis = new ByteArrayInputStream(buf);
+    }
+
+    @Override
+    public int read() throws IOException {
+      return bis.read();
+    }
+  }
 
   private class Case implements Executable {
     private final int num;
@@ -138,14 +157,15 @@ public class BlackBoxTest {
     public void execute() {
       InputStream stdin = System.in;
       PrintStream stdout = System.out;
-      System.setIn(new ByteArrayInputStream(input));
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      System.setOut(new PrintStream(baos));
+      inputStream.resetTo(input);
+      System.setIn(inputStream);
+      ByteArrayOutputStream actual = new ByteArrayOutputStream();
+      System.setOut(new PrintStream(actual));
       try {
         main.invoke(null, (Object) args.clone());
-        baos.close();
+        actual.close();
         if (GENERATE_ACTUAL_FILES)
-          Files.write(path.resolve(String.format(ACTUAL_FORMAT, num)), baos.toByteArray());
+          Files.write(path.resolve(String.format(ACTUAL_FORMAT, num)), actual.toByteArray());
       } catch (IllegalAccessException
           | IllegalArgumentException
           | InvocationTargetException
@@ -155,7 +175,7 @@ public class BlackBoxTest {
       }
       System.setIn(stdin);
       System.setOut(stdout);
-      assertIterableEquals(expected, trim(Arrays.stream(baos.toString().split("\n"))));
+      assertIterableEquals(expected, trim(Arrays.stream(actual.toString().split("\n"))));
     }
   }
 
@@ -175,6 +195,7 @@ public class BlackBoxTest {
       throw new IllegalArgumentException(
           "Trying to produce test for " + clsPath + " outside of " + testsDir);
     this.path = clsPath;
+    this.inputStream = new ReusableByteArrayInputStream();
     final String fqClsName = testsDir.relativize(clsPath).toString().replace(File.separator, ".");
     Method main = null;
     try {
@@ -192,6 +213,7 @@ public class BlackBoxTest {
     }
     this.main = main;
     final Map<Integer, DynamicTest> casesMap = new TreeMap<>();
+    final ReusableByteArrayInputStream inputStream = new ReusableByteArrayInputStream();
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(path, "expected-*.txt")) {
       for (Path path : stream) {
         final Matcher m = TASK_PATTERN.matcher(path.getFileName().toString());
