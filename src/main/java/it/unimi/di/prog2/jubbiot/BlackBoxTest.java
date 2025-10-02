@@ -109,26 +109,6 @@ public class BlackBoxTest {
   private final Method main;
   private final Path path;
   private final List<DynamicTest> cases;
-  private final ReusableByteArrayInputStream inputStream;
-
-  private class ReusableByteArrayInputStream extends InputStream {
-
-    private InputStream bis;
-
-    public ReusableByteArrayInputStream() {
-      this.bis = InputStream.nullInputStream();
-    }
-
-    public void resetTo(byte[] buf) {
-      Objects.requireNonNull(buf);
-      this.bis = new ByteArrayInputStream(buf);
-    }
-
-    @Override
-    public int read() throws IOException {
-      return bis.read();
-    }
-  }
 
   private class Case implements Executable {
     private final int num;
@@ -157,8 +137,7 @@ public class BlackBoxTest {
     public void execute() {
       InputStream stdin = System.in;
       PrintStream stdout = System.out;
-      inputStream.resetTo(input);
-      System.setIn(inputStream);
+      System.setIn(new ByteArrayInputStream(input));
       ByteArrayOutputStream actual = new ByteArrayOutputStream();
       System.setOut(new PrintStream(actual));
       try {
@@ -195,7 +174,6 @@ public class BlackBoxTest {
       throw new IllegalArgumentException(
           "Trying to produce test for " + clsPath + " outside of " + testsDir);
     this.path = clsPath;
-    this.inputStream = new ReusableByteArrayInputStream();
     final String fqClsName = testsDir.relativize(clsPath).toString().replace(File.separator, ".");
     Method main = null;
     try {
@@ -213,7 +191,6 @@ public class BlackBoxTest {
     }
     this.main = main;
     final Map<Integer, DynamicTest> casesMap = new TreeMap<>();
-    final ReusableByteArrayInputStream inputStream = new ReusableByteArrayInputStream();
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(path, "expected-*.txt")) {
       for (Path path : stream) {
         final Matcher m = TASK_PATTERN.matcher(path.getFileName().toString());

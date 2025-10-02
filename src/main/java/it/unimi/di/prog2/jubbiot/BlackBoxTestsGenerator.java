@@ -99,7 +99,7 @@ public class BlackBoxTestsGenerator {
               FileVisitOption.FOLLOW_LINKS)
           .forEach(
               p ->
-                  p2t.computeIfAbsent(path.relativize(p.getParent()), k -> new LinkedList<>())
+                  p2t.computeIfAbsent(path.relativize(p.getParent()), _ -> new LinkedList<>())
                       .add(new BlackBoxTest(testsDir, p)));
     } catch (IOException | UncheckedIOException e) {
       return List.of(
